@@ -1,0 +1,46 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:   # кнопка "запустить вручную" на GitHub
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.7.3'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw'
+          modules: 'qtmultimedia'
+          tools: 'tools_mingw1310'
+
+      - name: Build (Release)
+        run: |
+          cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel
+
+      - name: Deploy (bundle Qt DLLs)
+        run: |
+          mkdir deploy
+          copy build\appAlinaRE.exe deploy\
+          windeployqt `
+            --release `
+            --qmldir . `
+            --no-translations `
+            deploy\appAlinaRE.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SudokuRE-Windows
+          path: deploy\
+          retention-days: 30

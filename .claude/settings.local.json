@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /home/ualdrm/Qt -name \"linuxdeployqt\" 2>/dev/null | head -5 *)",
+      "Read(//home/ualdrm/Qt/**)",
+      "Read(//opt/**)"
+    ]
+  }
+}
