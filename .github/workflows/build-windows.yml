@@ -2,8 +2,8 @@ name: Build Windows EXE
 
 on:
   push:
-    branches: [ master ]
-  workflow_dispatch:   # кнопка "запустить вручную" на GitHub
+    branches: [ master, main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -13,30 +13,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Qt
+      - name: Install Qt (MSVC)
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.7.3'
+          version: '6.6.3'
           host: 'windows'
           target: 'desktop'
-          arch: 'win64_mingw'
+          arch: 'win64_msvc2019_64'
           modules: 'qtmultimedia'
-          tools: 'tools_mingw1310'
+          cache: true
 
-      - name: Build (Release)
-        run: |
-          cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --parallel
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
-      - name: Deploy (bundle Qt DLLs)
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Deploy
+        shell: pwsh
         run: |
-          mkdir deploy
-          copy build\appAlinaRE.exe deploy\
-          windeployqt `
-            --release `
-            --qmldir . `
-            --no-translations `
-            deploy\appAlinaRE.exe
+          New-Item -ItemType Directory -Force -Path deploy
+          $exe = Get-ChildItem -Path build -Filter "appAlinaRE.exe" -Recurse | Select-Object -First 1
+          Write-Host "EXE found at: $($exe.FullName)"
+          Copy-Item $exe.FullName deploy\
+          windeployqt --release --qmldir . --no-translations deploy\appAlinaRE.exe
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
